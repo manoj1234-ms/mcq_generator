@@ -2,6 +2,7 @@ import os
 import time
 import random
 import re
+import io
 from flask import Flask, render_template, request, send_file
 import pdfplumber
 import docx
@@ -115,6 +116,9 @@ api_semaphore = threading.Semaphore(3)
 
 # Simple in-memory cache for generated MCQs
 mcq_cache = {}
+
+# Temporary storage for generated files (for download purposes)
+generated_files = {}
 
 def generate_mcqs_for_chunk(i, chunk, num_questions_per_chunk, previous_context=""):
     """Generate MCQs for a single chunk with optional previous context"""
@@ -257,24 +261,22 @@ def Question_mcqs_generator(input_text, num_questions):
     return all_mcqs
 
 def save_mcqs_to_file(mcqs, filename):
-    results_path = os.path.join(app.config['RESULTS_FOLDER'], filename)
-    with open(results_path, 'w') as f:
-        f.write(mcqs)
-    return results_path
+    # Return the MCQ content instead of saving to file
+    return mcqs
 
 def create_pdf(mcqs, filename):
     """Create a well-formatted PDF with proper MCQ layout and wrapping"""
     try:
         pdf = FPDF()
         pdf.add_page()
-        
+
         # Set up fonts and margins
         pdf.set_font("Helvetica", size=11)
         pdf.set_margins(15, 15, 15)  # Left, top, right margins
-        
+
         # Split MCQs by "## MCQ" marker
         mcq_sections = mcqs.split("## MCQ")
-        
+
         for i, section in enumerate(mcq_sections):
             if section.strip():
                 # Add MCQ header (skip first empty section)
@@ -283,21 +285,23 @@ def create_pdf(mcqs, filename):
                     pdf.multi_cell(0, 8, f"MCQ {i}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", size=11)
                     pdf.ln(2)
-                
+
                 # Process the MCQ content
                 _format_mcq_section(pdf, section.strip())
-                
+
                 # Add space between MCQs
                 pdf.ln(8)
-                
+
                 # Check if we need a new page
                 if pdf.get_y() > 250:  # 250mm is roughly where we want page breaks
                     pdf.add_page()
 
-        pdf_path = os.path.join(app.config['RESULTS_FOLDER'], filename)
-        pdf.output(pdf_path)
-        return pdf_path
-        
+        # Generate PDF in memory
+        pdf_buffer = io.BytesIO()
+        pdf.output(pdf_buffer)
+        pdf_buffer.seek(0)
+        return pdf_buffer
+
     except Exception as e:
         print(f"Error creating PDF: {str(e)}")
         raise e
@@ -372,12 +376,12 @@ def create_simple_pdf(mcqs, filename):
         pdf.add_page()
         pdf.set_font("Helvetica", size=10)
         pdf.set_margins(20, 20, 20)
-        
+
         # Add title
         pdf.set_font("Helvetica", style="B", size=14)
         pdf.multi_cell(0, 8, "Generated MCQs", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(5)
-        
+
         # Add the text with proper wrapping
         pdf.set_font("Helvetica", size=10)
         lines = mcqs.split('\n')
@@ -385,11 +389,13 @@ def create_simple_pdf(mcqs, filename):
             if line.strip():
                 # Use multi_cell for proper text wrapping
                 pdf.multi_cell(0, 5, line.strip(), new_x="LMARGIN", new_y="NEXT")
-        
-        pdf_path = os.path.join(app.config['RESULTS_FOLDER'], filename)
-        pdf.output(pdf_path)
-        return pdf_path
-        
+
+        # Generate PDF in memory
+        pdf_buffer = io.BytesIO()
+        pdf.output(pdf_buffer)
+        pdf_buffer.seek(0)
+        return pdf_buffer
+
     except Exception as e:
         print(f"Simple PDF creation failed: {str(e)}")
         raise e
@@ -490,34 +496,38 @@ def generate_mcqs():
         if not mcqs or len(mcqs.strip()) < 50:
             return "Failed to generate MCQs. Please try again or upload a different document.", 500
 
-        # Save the generated MCQs to files
+        # Generate filenames for display only (files not saved on disk)
         txt_filename = f"generated_mcqs_{filename.rsplit('.', 1)[0]}.txt"
         pdf_filename = f"generated_mcqs_{filename.rsplit('.', 1)[0]}.pdf"
-        
-        # Save text file
-        save_mcqs_to_file(mcqs, txt_filename)
-        
-        # Create PDF with error handling
+
+        # Store text content in memory for download
+        generated_files[txt_filename] = mcqs
+
+        # Create PDF in memory with error handling
         try:
-            create_pdf(mcqs, pdf_filename)
+            pdf_buffer = create_pdf(mcqs, pdf_filename)
             pdf_created = True
+            generated_files[pdf_filename] = pdf_buffer
         except Exception as e:
             print(f"PDF creation failed: {str(e)}")
-            # Create a simple fallback PDF
+            # Create a simple fallback PDF in memory
             try:
-                create_simple_pdf(mcqs, pdf_filename)
+                pdf_buffer = create_simple_pdf(mcqs, pdf_filename)
                 pdf_created = True
+                generated_files[pdf_filename] = pdf_buffer
             except Exception as e2:
                 print(f"Fallback PDF creation also failed: {str(e2)}")
                 pdf_created = False
+                pdf_buffer = None
 
-        # Display and allow downloading
+        # Render results page with MCQ text and PDF buffer info
         is_single_mcq = (num_questions == 1)
         return render_template('results.html',
-                            mcqs=mcqs,
-                            txt_filename=txt_filename,
-                            pdf_filename=pdf_filename if pdf_created else None,
-                            is_single_mcq=is_single_mcq)
+                               mcqs=mcqs,
+                               txt_filename=txt_filename,
+                               pdf_filename=pdf_filename if pdf_created else None,
+                               is_single_mcq=is_single_mcq,
+                               pdf_created=pdf_created)
         
     except Exception as e:
         print(f"Error in generate_mcqs: {str(e)}")
@@ -526,10 +536,23 @@ def generate_mcqs():
 @app.route('/download/<filename>')
 def download_file(filename):
     try:
-        file_path = os.path.join(app.config['RESULTS_FOLDER'], filename)
-        if not os.path.exists(file_path):
+        if filename in generated_files:
+            content = generated_files[filename]
+            if isinstance(content, str):
+                # Text file
+                return send_file(io.BytesIO(content.encode('utf-8')), 
+                               as_attachment=True, 
+                               download_name=filename,
+                               mimetype='text/plain')
+            else:
+                # PDF file (BytesIO buffer)
+                content.seek(0)
+                return send_file(content, 
+                               as_attachment=True, 
+                               download_name=filename,
+                               mimetype='application/pdf')
+        else:
             return "File not found", 404
-        return send_file(file_path, as_attachment=True)
     except Exception as e:
         print(f"Error downloading file {filename}: {str(e)}")
         return "Error downloading file", 500
