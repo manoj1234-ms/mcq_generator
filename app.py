@@ -10,9 +10,11 @@ from werkzeug.utils import secure_filename
 import google.generativeai as genai
 from fpdf import FPDF  # pip install fpdf
 
-# Set your API key
-os.environ["GEMINI_API_KEY"] = "AIzaSyAXgcXkqotvm7HbTXsPOMZwuB0-C3asW94"
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+# Set your API key from environment variable
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise EnvironmentError("GEMINI_API_KEY environment variable not set")
+genai.configure(api_key=api_key)
 
 # Initialize models with fallback strategy
 flash_model = genai.GenerativeModel("models/gemini-2.5-flash")
@@ -537,4 +539,4 @@ if __name__ == "__main__":
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['RESULTS_FOLDER']):
         os.makedirs(app.config['RESULTS_FOLDER'])
-    app.run(debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), use_reloader=False)
