@@ -1,4 +1,4 @@
 - [x] Modify extract_text_from_file function to accept file object instead of file path
 - [x] Update /generate route to process file in memory without saving to uploads/
 - [x] Modify app to generate and serve MCQ files in memory without saving to results/
-- [ ] Test the changes
+- [x] Push changes to main branch on GitHub repository
