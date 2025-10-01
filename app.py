@@ -534,9 +534,13 @@ def download_file(filename):
         print(f"Error downloading file {filename}: {str(e)}")
         return "Error downloading file", 500
 
+# For Vercel serverless deployment
+def __call__(environ, start_response):
+    return app(environ, start_response)
+
 if __name__ == "__main__":
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['RESULTS_FOLDER']):
         os.makedirs(app.config['RESULTS_FOLDER'])
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), use_reloader=False)
+    app.run()
