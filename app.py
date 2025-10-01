@@ -184,23 +184,25 @@ def generate_mcqs_with_fallback(text_chunks, num_questions_per_chunk):
     
     return '\n\n'.join(all_mcqs)
 
-def extract_text_from_file(file_path):
+def extract_text_from_file(file_obj, filename):
     try:
-        ext = file_path.rsplit('.', 1)[1].lower()
+        ext = filename.rsplit('.', 1)[1].lower()
         if ext == 'pdf':
-            with pdfplumber.open(file_path) as pdf:
+            with pdfplumber.open(file_obj) as pdf:
                 text = ''.join([page.extract_text() for page in pdf.pages if page.extract_text()])
             return text
         elif ext == 'docx':
-            doc = docx.Document(file_path)
+            doc = docx.Document(file_obj)
             text = ' '.join([para.text for para in doc.paragraphs if para.text.strip()])
             return text
         elif ext == 'txt':
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
+            content = file_obj.read()
+            if isinstance(content, bytes):
+                content = content.decode('utf-8')
+            return content
         return None
     except Exception as e:
-        print(f"Error extracting text from {file_path}: {str(e)}")
+        print(f"Error extracting text from {filename}: {str(e)}")
         return None
 
 def Question_mcqs_generator(input_text, num_questions):
@@ -411,11 +413,9 @@ def generate_mcqs():
             return "Invalid file format. Please upload PDF, TXT, or DOCX files only.", 400
 
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
 
-        # Extract text from the uploaded file
-        text = extract_text_from_file(file_path)
+        # Extract text from the uploaded file directly from memory
+        text = extract_text_from_file(file, filename)
 
         if not text:
             return "Could not extract text from the uploaded file. Please check if the file is valid and not corrupted.", 400
