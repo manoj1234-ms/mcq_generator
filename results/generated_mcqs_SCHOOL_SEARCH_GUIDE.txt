@@ -1,0 +1,23 @@
+## MCQ
+Question: After typing a school's name into the search bar on the UDISE website, what is the immediate next step a user must take before seeing search results?
+A) Verify details of schools from the portal.
+B) Use the given search bar to reduce the number of possible matches.
+C) Enter Captcha and press the search button.
+D) Visit the PM Vidyalaxmi portal.
+Correct Answer: C
+
+## MCQ
+Question: Which of the following combinations of search parameters from the UDISE website is NOT described as a method for finding a school on the PM Vidyalaxmi portal?
+A) State name and PIN code.
+B) State name, District name, and School name.
+C) State name and Class passed.
+D) Both A and B are described methods.
+Correct Answer: C
+
+## MCQ
+Question: If a user is still unable to find their school and decides to raise a grievance or send an email for support, which of the following details is NOT explicitly mentioned as required information to be included?
+A) School/college name and address.
+B) Class passed from the school/college.
+C) District, state, and PIN code.
+D) The specific method (Method 1 or Method 2) used on the PM Vidyalaxmi portal.
+Correct Answer: D

@@ -1,0 +1,15 @@
+## MCQ
+Question: When using an LLM to generate Python code for a data science task, which strategy is highlighted as significantly improving the LLM's ability to provide a correct and relevant response, especially concerning data structure?
+A) Suggesting a specific Pandas method like `query()` or `pivot()`.
+B) Describing the desired output in a step-by-step manner.
+C) Including the initial rows of the relevant dataframe in the prompt.
+D) Clearly stating the purpose of the code in general terms.
+Correct Answer: C
+
+## MCQ
+Question: According to the document, which piece of information is explicitly highlighted as essential when using an LLM to *fix* bugs, but is generally not required when using an LLM to *generate* new code or *explain* existing code?
+A) The programming language the code is written in.
+B) A clear description of the intended functionality of the code.
+C) The full error message or a description of what is breaking.
+D) Several rows from the relevant dataframes to provide context.
+Correct Answer: C

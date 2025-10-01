@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated MCQs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .mcqs-content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+
+        .download-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        a {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #495057;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{% if is_single_mcq %}Generated MCQ{% else %}Generated MCQs{% endif %}</h1>
+
+        <div class="success-message">
+            ✅ Successfully generated {% if is_single_mcq %}MCQ{% else %}MCQs{% endif %} from your document!
+        </div>
+
+        <div class="mcqs-content">
+            {{ mcqs }}
+        </div>
+
+        <div class="download-section">
+            <h3>Download Your MCQs</h3>
+            <div class="download-links">
+                <a href="/download/{{ txt_filename }}" download>Download as TXT</a>
+                {% if pdf_filename %}
+                <a href="/download/{{ pdf_filename }}" download>Download as PDF</a>
+                {% else %}
+                <span style="color: #dc3545; font-size: 14px;">PDF generation failed - TXT file available</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <a href="/" class="back-link">← Generate More MCQs</a>
+    </div>
+</body>
+</html>
